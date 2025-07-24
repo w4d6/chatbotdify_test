@@ -1,0 +1,5 @@
+API シークレットキー
+
+このキーを安全でアクセス可能な場所に保管してください。
+app-JYpcoHRUulYkDI4OR6j5IXAf
+

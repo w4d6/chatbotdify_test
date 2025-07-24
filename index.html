@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dify チャットボット with AI Input</title>
+    <link href="./globals.css" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            min-height: 600px;
+        }
+
+        .chat-header {
+            background: #4a90e2;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-height: 400px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: #4a90e2;
+            color: white;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .ai-input-section {
+            padding: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        #ai-input-container {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            🤖 Dify チャットボット with AI Input
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+                こんにちは！AI入力機能を使って何かお手伝いできることはありますか？
+            </div>
+        </div>
+        
+        <div class="ai-input-section">
+            <div id="ai-input-container"></div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        
+        // AI Input with Suggestions Component (inline for demo)
+        const AIInputWithSuggestions = ({ onSubmit }) => {
+            const [inputValue, setInputValue] = useState("");
+            const [selectedItem, setSelectedItem] = useState(null);
+            
+            const actions = [
+                {
+                    text: "要約",
+                    icon: "📝",
+                    colors: {
+                        icon: "text-orange-600",
+                        border: "border-orange-500",
+                        bg: "bg-orange-100",
+                    },
+                },
+                {
+                    text: "文法チェック",
+                    icon: "✅",
+                    colors: {
+                        icon: "text-emerald-600",
+                        border: "border-emerald-500", 
+                        bg: "bg-emerald-100",
+                    },
+                },
+                {
+                    text: "短縮",
+                    icon: "📏",
+                    colors: {
+                        icon: "text-purple-600",
+                        border: "border-purple-500",
+                        bg: "bg-purple-100",
+                    },
+                },
+            ];
+            
+            const handleSubmit = () => {
+                if (inputValue.trim()) {
+                    onSubmit(inputValue, selectedItem);
+                    setInputValue("");
+                    setSelectedItem(null);
+                }
+            };
+            
+            return React.createElement('div', { className: 'w-full py-4' },
+                React.createElement('div', { className: 'relative max-w-xl w-full mx-auto' },
+                    React.createElement('div', { 
+                        className: 'relative border border-gray-300 rounded-2xl bg-gray-50 p-3',
+                        style: { minHeight: '64px' }
+                    },
+                        React.createElement('textarea', {
+                            value: inputValue,
+                            onChange: (e) => setInputValue(e.target.value),
+                            onKeyDown: (e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSubmit();
+                                }
+                            },
+                            placeholder: 'メッセージを入力してください...',
+                            className: 'w-full bg-transparent border-none outline-none resize-none text-sm',
+                            style: { minHeight: '40px' }
+                        }),
+                        selectedItem && React.createElement('button', {
+                            onClick: handleSubmit,
+                            className: `absolute left-3 bottom-3 px-2 py-1 text-xs rounded-md border ${actions.find(a => a.text === selectedItem)?.colors.bg} ${actions.find(a => a.text === selectedItem)?.colors.border}`
+                        }, 
+                            React.createElement('span', { className: 'mr-1' }, actions.find(a => a.text === selectedItem)?.icon),
+                            selectedItem
+                        )
+                    )
+                ),
+                React.createElement('div', { className: 'flex flex-wrap gap-2 mt-2 max-w-xl mx-auto justify-center' },
+                    actions.filter(item => item.text !== selectedItem).map(action => 
+                        React.createElement('button', {
+                            key: action.text,
+                            onClick: () => setSelectedItem(selectedItem === action.text ? null : action.text),
+                            className: 'px-3 py-1.5 text-xs rounded-full border border-gray-300 bg-white hover:bg-gray-100 flex items-center gap-1'
+                        },
+                            React.createElement('span', {}, action.icon),
+                            action.text
+                        )
+                    )
+                )
+            );
+        };
+        
+        // Main App Component
+        const App = () => {
+            const handleAISubmit = (text, action) => {
+                // Add user message to chat
+                const messagesContainer = document.getElementById('chatMessages');
+                const userMessage = document.createElement('div');
+                userMessage.className = 'message user';
+                userMessage.textContent = action ? `[${action}] ${text}` : text;
+                messagesContainer.appendChild(userMessage);
+                
+                // Simulate AI response
+                setTimeout(() => {
+                    const aiMessage = document.createElement('div');
+                    aiMessage.className = 'message assistant';
+                    aiMessage.textContent = action ? 
+                        `${action}の処理をしました: ${text.substring(0, 50)}...` : 
+                        `受信しました: ${text}`;
+                    messagesContainer.appendChild(aiMessage);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }, 1000);
+                
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            };
+            
+            return React.createElement(AIInputWithSuggestions, { onSubmit: handleAISubmit });
+        };
+        
+        // Render the app
+        ReactDOM.render(React.createElement(App), document.getElementById('ai-input-container'));
+    </script>
+</body>
+</html>
